@@ -14,21 +14,39 @@
  *   Packet Format: (info based on mplayer ColorLight 5a-75 video output patch)
  *
  *   0x0101 Packet: (send first)
- *   	- Data Length:     98
- *   	- Destination MAC: 11:22:33:44:55:66
- *   	- Source MAC:      22:22:33:44:55:66
- *   	- Ether Type:      0x0101 (have also seen 0x0100, 0x0104, 0x0107.
- *   	- Data[0-end]:     0x00
+ *      This is the "display frame buffer" packet.
+ *      - Data Length:     98
+ *      - Destination MAC: 11:22:33:44:55:66
+ *      - Source MAC:      22:22:33:44:55:66
+ *      - Ether Type:      0x0101 (have also seen 0x0100, 0x0104, 0x0107.
+ *      - Data[0-end]:     0x00
+ *
+ *      The following has been discovered Oct 2024 in later LEDVision Traces. These are all 0x0107 EtherType packets
+ *      - Data[21]:        Display Brightness. eg:
+ *              0x0D: 05% || 0x1A: 10% || 0x40: 25% || 0x80: 50% || 0xBF: 75% || 0xff: 100%
+ *      - Data[22]:        0x05
+ *      - Data[23]:        0x00
+ *      - Data[24]:        Linear Brightness for Red (These three are used for Colour Temperature adjustment)
+ *      - Data[25]:        Linear Brightness for Green
+ *      - Data[26]:        Linear Brightness for Blue
+ *              2000K at 10% brightness: 0x1a, 0x0c, 0x01
+ *              6500K at 10% brightness: 0x1a, 0x1a, 0x1a
+ *              2000K at 100% brightness: 0xff, 0x76, 0x06
+ *              4500K at 100% brightness: 0xff, 0xdc, 0x8f
+ *              6500K at 100% brightness: 0xff, 0xff, 0xff
+ *              8000K at 100% brightness: 0xce, 0xd8, 0xff
+ *
  *
  *   0x0AFF Packet: (send second, but not at all in some captures)
- *   	- Data Length:     63
- *   	- Destination MAC: 11:22:33:44:55:66
- *   	- Source MAC:      22:22:33:44:55:66
- *   	- Ether Type:      0x0AFF
- *   	- Data[0]:         0xFF
- *   	- Data[1]:         0xFF
- *   	- Data[2]:         0xFF
- *   	- Data[3-end]:     0x00
+ *      This is the "Set Brightness" packet. Unsure how it differs from the above
+ *      - Data Length:     63
+ *      - Destination MAC: 11:22:33:44:55:66
+ *      - Source MAC:      22:22:33:44:55:66
+ *      - Ether Type:      0x0AFF  // The last two octets here also set brightness on some panels.See Data[21] in the above frame packet.
+ *      - Data[0]:         0xFF    // Red Brightness
+ *      - Data[1]:         0xFF    // Green Brightness
+ *      - Data[2]:         0xFF    // Blue Brightness
+ *      - Data[3-end]:     0x00
  *
  *   Row data packets: (send one packet for each row of display)
  *      - Data Length:     (Row_Width * 3) + 7
