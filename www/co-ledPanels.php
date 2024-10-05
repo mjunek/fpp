@@ -617,13 +617,18 @@ function PopulateEthernetInterfaces()
     $interfaces = network_list_interfaces_array();
     foreach ($interfaces as $iface) {
         $iface = preg_replace("/:$/", "", $iface);
+        if (!str_starts_with($iface, "eth")) { // We only care about ethernet interfaces for ColorLight, not wlan.
+            continue;
+        }
         echo "<option value='" . $iface;
         echo "'";
         if ($iface === "eth0") {
             echo " selected";
         }
-        
-        $ifaceSpeed = (int)exec("$SUDO ethtool $iface | grep -i 'baset' | grep -Eo '[0-9]{1,4}' | sort | tail -1");
+        $ifaceSpeed = (int)exec("$SUDO ethtool $iface | grep -i 'baset' | grep -Eo '[0-9]{1,4}' | sort -n | tail -1");        
+		if ($ifaceSpeed == 0) {	 // Interface does not report its capable speeds. Try get current link speed instead.
+			$ifaceSpeed = (int)exec("$SUDO cat /sys/class/net/$iface/speed");        
+		}
         echo ">" . $iface . " (" . $ifaceSpeed ."Mbps)</option>";
     }
 }
@@ -1276,7 +1281,7 @@ function TogglePanelTestPattern() {
 function WarnIfSlowNIC() {
     var NicSpeed = parseInt($('#LEDPanelsInterface').find(":selected").text().split('(')[1].split('M')[0]);
     if (NicSpeed < 1000 && $('#LEDPanelsConnection').find(":selected").text()=="ColorLight" && $('#LEDPanelsEnabled').is(":checked")==true) {
-        $('#divLEDPanelWarnings').html('<div class="alert alert-danger">Selected interface does not support 1000+ Mbps, which is the Colorlight minimum</div>');
+        $('#divLEDPanelWarnings').html('<div class="alert alert-danger">Selected interface does not support 1000+ Mbps, which is the ColorLight minimum when cabled direct.</div>');
     } else
     {
         $('#divLEDPanelWarnings').html("");
